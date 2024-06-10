@@ -43,17 +43,22 @@ public:
 };
 
 class AirPurifierModule {
-private:
-    RobotCleaner& robotCleaner;
 public:
-    AirPurifierModule(RobotCleaner& robotCleaner) : robotCleaner(robotCleaner) {}
-
-    void purifyAndClean() {
-        robotCleaner.clean();
+    void purify() {
         std::cout << "Purifying the air..." << std::endl;
     }
 };
 
+class EnhancedRobotCleaner {
+private:
+    RobotCleaner robotCleaner;
+    AirPurifierModule airPurifier;
+public:
+    void cleanAndPurify() {
+        robotCleaner.clean();
+        airPurifier.purify();
+    }
+};
 ```
 
 ## 3. 리스코프 치환 원칙 (Liskov Substitution Principle, LSP)
@@ -81,6 +86,9 @@ public:
     }
 };
 
+void performCleaning(RobotCleaner& robot) {
+    robot.clean();
+}
 ```
 
 ## 4. 인터페이스 분리 원칙 (Interface Segregation Principle, ISP)
@@ -196,26 +204,50 @@ public:
 };
 
 // OCP
-class AirPurifierModule {
-private:
-    RobotCleaner& robotCleaner;
+class Cleaner {
 public:
-    AirPurifierModule(RobotCleaner& robotCleaner) : robotCleaner(robotCleaner) {}
+    virtual void clean() = 0;
+};
 
-    void purifyAndClean() {
-        robotCleaner.clean();
+class BasicCleaner : public Cleaner {
+public:
+    void clean() override {
+        std::cout << "Cleaning the room..." << std::endl;
+    }
+};
+
+class AirPurifier {
+public:
+    void purify() {
         std::cout << "Purifying the air..." << std::endl;
+    }
+};
+
+class EnhancedCleaner : public Cleaner {
+private:
+    Cleaner& cleaner;
+    AirPurifier& airPurifier;
+public:
+    EnhancedCleaner(Cleaner& cleaner, AirPurifier& airPurifier)
+        : cleaner(cleaner), airPurifier(airPurifier) {}
+
+    void clean() override {
+        cleaner.clean();
+        airPurifier.purify();
     }
 };
 
 // LSP
-class AdvancedRobotCleaner : public RobotCleaner {
+class AdvancedCleaner : public Cleaner {
 public:
     void clean() override {
-        RobotCleaner::clean();
-        std::cout << "Purifying the air..." << std::endl;
+        std::cout << "Cleaning the room and purifying the air..." << std::endl;
     }
 };
+
+void performCleaning(Cleaner& cleaner) {
+    cleaner.clean();
+}
 
 // ISP
 class Cleaning {
@@ -299,12 +331,14 @@ int main() {
     robotCleaner.clean();
 
     // OCP
-    AirPurifierModule airPurifierModule(robotCleaner);
-    airPurifierModule.purifyAndClean();
+    BasicCleaner basicCleaner;
+    AirPurifier airPurifier;
+    EnhancedCleaner enhancedCleaner(basicCleaner, airPurifier);
+    enhancedCleaner.clean();
 
     // LSP
-    AdvancedRobotCleaner advancedRobot;
-    advancedRobot.clean();
+    AdvancedCleaner advancedCleaner;
+    performCleaning(advancedCleaner);
 
     // ISP
     CleaningModule cleaningModule;
