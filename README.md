@@ -23,6 +23,13 @@ public:
         std::cout << "Cleaning the room..." << std::endl;
     }
 };
+
+int main() {
+    RobotCleaner robotCleaner;
+    robotCleaner.clean();
+
+    return 0;
+}
 ```
 
 ## 2. 개방-폐쇄 원칙 (Open-Closed Principle, OCP)
@@ -35,30 +42,47 @@ public:
 ```cpp
 #include <iostream>
 
-class RobotCleaner {
+class Cleaner {
 public:
-    void clean() {
+    virtual void clean() = 0;
+};
+
+class BasicCleaner : public Cleaner {
+public:
+    void clean() override {
         std::cout << "Cleaning the room..." << std::endl;
     }
 };
 
-class AirPurifierModule {
+class AirPurifier : public Cleaner {
 public:
-    void purify() {
+    void clean() override {
         std::cout << "Purifying the air..." << std::endl;
     }
 };
 
-class EnhancedRobotCleaner {
+class EnhancedCleaner : public Cleaner {
 private:
-    RobotCleaner robotCleaner;
-    AirPurifierModule airPurifier;
+    Cleaner& cleaner;
+    AirPurifier& airPurifier;
 public:
-    void cleanAndPurify() {
-        robotCleaner.clean();
-        airPurifier.purify();
+    EnhancedCleaner(Cleaner& cleaner, AirPurifier& airPurifier)
+        : cleaner(cleaner), airPurifier(airPurifier) {}
+
+    void clean() override {
+        cleaner.clean();
+        airPurifier.clean();
     }
 };
+
+int main() {
+    BasicCleaner basicCleaner;
+    AirPurifier airPurifier;
+    EnhancedCleaner enhancedCleaner(basicCleaner, airPurifier);
+    enhancedCleaner.clean();
+
+    return 0;
+}
 ```
 
 ## 3. 리스코프 치환 원칙 (Liskov Substitution Principle, LSP)
@@ -88,6 +112,13 @@ public:
 
 void performCleaning(RobotCleaner& robot) {
     robot.clean();
+}
+
+int main() {
+    AdvancedRobotCleaner advancedCleaner;
+    performCleaning(advancedCleaner);
+
+    return 0;
 }
 ```
 
@@ -137,6 +168,18 @@ public:
     }
 };
 
+int main() {
+    CleaningModule cleaningModule;
+    CookingModule cookingModule;
+    WashingModule washingModule;
+
+    cleaningModule.clean();
+    cookingModule.cook();
+    washingModule.wash();
+
+    return 0;
+}
+
 ```
 
 ## 5. 의존성 역전 원칙 (Dependency Inversion Principle, DIP)
@@ -149,43 +192,49 @@ public:
 ```cpp
 #include <iostream>
 
-class RobotModule {
+class Module {
 public:
     virtual void operate() = 0;
 };
 
-class CleaningModuleDIP : public RobotModule {
+class CleaningModule : public Module {
 public:
     void operate() override {
         std::cout << "Cleaning the room..." << std::endl;
     }
 };
 
-class CookingModuleDIP : public RobotModule {
+class CookingModule : public Module {
 public:
     void operate() override {
         std::cout << "Cooking a meal..." << std::endl;
     }
 };
 
-class WashingModuleDIP : public RobotModule {
-public:
-    void operate() override {
-        std::cout << "Washing the clothes..." << std::endl;
-    }
-};
-
 class RobotController {
 private:
-    RobotModule& module;
+    Module& module;
+
 public:
-    RobotController(RobotModule& module) : module(module) {}
+    RobotController(Module& module) : module(module) {}
 
     void execute() {
         module.operate();
     }
 };
 
+int main() {
+    CleaningModule cleaningModule;
+    CookingModule cookingModule;
+
+    RobotController robot1(cleaningModule);
+    robot1.execute();
+
+    RobotController robot2(cookingModule);
+    robot2.execute();
+
+    return 0;
+}
 ```
 
 ## 전체 통합 코드
@@ -195,7 +244,7 @@ public:
 ```cpp
 #include <iostream>
 
-// SRP
+// SRP: Single Responsibility Principle
 class RobotCleaner {
 public:
     void clean() {
@@ -203,7 +252,7 @@ public:
     }
 };
 
-// OCP
+// OCP: Open-Closed Principle
 class Cleaner {
 public:
     virtual void clean() = 0;
@@ -216,9 +265,9 @@ public:
     }
 };
 
-class AirPurifier {
+class AirPurifier : public Cleaner {
 public:
-    void purify() {
+    void clean() override {
         std::cout << "Purifying the air..." << std::endl;
     }
 };
@@ -233,23 +282,31 @@ public:
 
     void clean() override {
         cleaner.clean();
-        airPurifier.purify();
+        airPurifier.clean();
     }
 };
 
-// LSP
-class AdvancedCleaner : public Cleaner {
+// LSP: Liskov Substitution Principle
+class RobotCleanerLSP {
+public:
+    virtual void clean() {
+        std::cout << "Cleaning the room..." << std::endl;
+    }
+};
+
+class AdvancedRobotCleaner : public RobotCleanerLSP {
 public:
     void clean() override {
-        std::cout << "Cleaning the room and purifying the air..." << std::endl;
+        RobotCleanerLSP::clean();
+        std::cout << "Purifying the air..." << std::endl;
     }
 };
 
-void performCleaning(Cleaner& cleaner) {
-    cleaner.clean();
+void performCleaning(RobotCleanerLSP& robot) {
+    robot.clean();
 }
 
-// ISP
+// ISP: Interface Segregation Principle
 class Cleaning {
 public:
     virtual void clean() = 0;
@@ -286,27 +343,27 @@ public:
     }
 };
 
-// DIP
-class RobotModule {
+// DIP: Dependency Inversion Principle
+class Module {
 public:
     virtual void operate() = 0;
 };
 
-class CleaningModuleDIP : public RobotModule {
+class CleaningModuleDIP : public Module {
 public:
     void operate() override {
         std::cout << "Cleaning the room..." << std::endl;
     }
 };
 
-class CookingModuleDIP : public RobotModule {
+class CookingModuleDIP : public Module {
 public:
     void operate() override {
         std::cout << "Cooking a meal..." << std::endl;
     }
 };
 
-class WashingModuleDIP : public RobotModule {
+class WashingModuleDIP : public Module {
 public:
     void operate() override {
         std::cout << "Washing the clothes..." << std::endl;
@@ -315,16 +372,16 @@ public:
 
 class RobotController {
 private:
-    RobotModule& module;
+    Module& module;
+
 public:
-    RobotController(RobotModule& module) : module(module) {}
+    RobotController(Module& module) : module(module) {}
 
     void execute() {
         module.operate();
     }
 };
 
-// Main function to demonstrate all principles
 int main() {
     // SRP
     RobotCleaner robotCleaner;
@@ -337,7 +394,7 @@ int main() {
     enhancedCleaner.clean();
 
     // LSP
-    AdvancedCleaner advancedCleaner;
+    AdvancedRobotCleaner advancedCleaner;
     performCleaning(advancedCleaner);
 
     // ISP
